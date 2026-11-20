@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>货物托运单管理 - 厦门聚富塑胶</title>
+<style>
+  :root{
+    --blue:#185FA5; --blue-d:#0C447C; --green:#3B6D11; --red:#A32D2D;
+    --amber:#854F0B; --ink:#1f2329; --muted:#6b7280; --line:#e5e7eb;
+    --bg:#f5f6f8; --card:#ffffff; --soft:#eef3f9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px 40px}
+  header{background:linear-gradient(135deg,var(--blue-d),var(--blue));color:#fff;padding:20px 16px 16px;border-radius:0 0 16px 16px;box-shadow:0 4px 16px rgba(24,95,165,.18)}
+  header h1{font-size:19px;font-weight:600}
+  header p{font-size:12px;opacity:.85;margin-top:2px}
+  .tabs{display:flex;gap:6px;margin:18px 0 14px}
+  .tab{flex:1;text-align:center;padding:10px 4px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:14px;cursor:pointer;color:var(--muted);user-select:none}
+  .tab.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:500}
+  .view{display:none}
+  .view.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .filters input[type=date],.filters select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--ink)}
+  .btn{border:none;border-radius:8px;padding:9px 14px;font-size:14px;cursor:pointer;font-weight:500}
+  .btn-p{background:var(--blue);color:#fff}
+  .btn-g{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+  .btn-ok{background:var(--green);color:#fff}
+  .btn-no{background:#fff;color:var(--red);border:1px solid var(--red)}
+  .btn-del{background:#fff;color:var(--muted);border:1px solid var(--line)}
+  .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .no{font-weight:600;color:var(--blue-d)}
+  .meta{font-size:13px;color:var(--muted);margin-top:4px}
+  .meta b{color:var(--ink);font-weight:500}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
+  .b-pending{background:#FAC775;color:#633806}
+  .b-done{background:#C0DD97;color:#27500A}
+  .b-reject{background:#F7C1C1;color:#791F1F}
+  .ops{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .ops .btn{padding:6px 11px;font-size:13px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+  .field label .req{color:#D4380D;font-weight:700}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+  .field textarea{resize:vertical;min-height:60px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .calc{background:var(--soft);border-radius:10px;padding:12px 14px;margin:6px 0 16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .calc .amt{font-size:20px;color:var(--blue-d);font-weight:600}
+  .title-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .title-bar h2{font-size:16px;font-weight:600}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
+  .tip{font-size:12px;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal.on{display:flex}
+  .modal-box{background:#fff;border-radius:14px;width:100%;max-width:640px;max-height:90vh;overflow:auto;padding:20px}
+  .modal-box h3{font-size:17px;margin-bottom:14px}
+  .modal-ops{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+  .paper{background:#fff;color:#000;padding:8px;font-family:"SimSun","宋体",serif;font-size:12px;line-height:1.4}
+  .sheet{display:flex}
+  .cols{flex:1;min-width:0}
+  .side{width:24px;border:1px solid #000;border-left:none;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1.6;text-align:center;word-break:break-all;padding:4px 3px;letter-spacing:1px}
+  .ptop{display:flex;align-items:center;border:1px solid #000;border-bottom:none;padding:4px 8px;min-height:66px}
+  .plogo{width:50px;height:50px;border:2px solid #173a6b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Arial;font-size:19px;font-weight:700;color:#173a6b;flex-shrink:0}
+  .pco{flex:1;text-align:center;min-width:0}
+  .pco .cn{font-size:17px;font-weight:700;letter-spacing:2px}
+  .pco .en{font-size:9px;letter-spacing:1px;white-space:nowrap}
+  .pqr{width:60px;height:60px;flex-shrink:0;margin:0 8px}
+  .pqr svg{width:100%;height:100%;display:block}
+  .pstat{font-size:11px;line-height:1.9;flex-shrink:0}
+  .pstat u{background:#ffe600;text-decoration:none;padding:0 2px}
+  .ptitle{text-align:center;font-size:20px;font-weight:700;letter-spacing:8px;border:1px solid #000;border-bottom:none;padding:2px 0 4px;position:relative}
+  .ptitle .pno{position:absolute;right:8px;bottom:5px;font-size:11px;font-weight:400;letter-spacing:0}
+  table.pw{width:100%;border-collapse:collapse;table-layout:fixed}
+  table.pw td{border:1px solid #000;padding:3px 5px;font-size:11px;vertical-align:middle;min-height:20px;overflow-wrap:break-word}
+  td.lb{background:#fafafa;font-weight:600;white-space:nowrap}
+  .pbig{font-size:13px;font-weight:700}
+  .ptotal{color:#A32D2D;font-weight:700;font-size:13px}
+  .pterms{font-size:11px;line-height:1.45}
+  .paccept{font-size:11px;line-height:1.8}
+  .psign{border:1px solid #000;border-top:none;padding:6px 8px;font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  table.pt{width:100%;border-collapse:collapse;margin-top:8px}
+  table.pt td,table.pt th{border:1px solid #333;padding:6px 8px;font-size:12px}
+  table.pt th{background:#f0f0f0;font-weight:600;width:90px;text-align:left}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr}.calc .amt{font-size:17px}.pqr{width:46px;height:46px;margin:0 4px}.pco .cn{font-size:13px}.pco .en{font-size:7px}.pstat{font-size:9px}}
+  @media print{@page{size:A4 landscape;margin:8mm}header,.tabs,.filters,.ops,.title-bar .btn,.modal-ops,.tip,.modal-box h3{display:none!important}body{background:#fff}.modal{position:static;background:#fff;padding:0;display:block}.modal-box{max-width:none;padding:0;box-shadow:none}.paper{border:none;padding:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0">
+    <h1>货物托运单管理</h1>
+    <p>厦门聚富塑胶制品有限公司 · 审批通过后自动生成托运单</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab on" data-v="list">单据列表</div>
+    <div class="tab" data-v="new">新建托运单</div>
+    <div class="tab" data-v="export">查询导出</div>
+  </div>
+
+  <!-- 列表 -->
+  <section class="view on" id="v-list">
+    <div class="filters">
+      <select id="f-status">
+        <option value="all">全部状态</option>
+        <option value="pending">待审批</option>
+        <option value="done">已通过</option>
+        <option value="reject">已驳回</option>
+      </select>
+      <input type="date" id="f-start" title="开始日期">
+      <input type="date" id="f-end" title="结束日期">
+      <button class="btn btn-g" onclick="renderList()">筛选</button>
+      <button class="btn btn-g" onclick="loadState().then(renderList)">刷新</button>
+    </div>
+    <div id="listBox"></div>
+  </section>
+
+  <!-- 新建 -->
+  <section class="view" id="v-new">
+    <div class="tip">说明：提交后状态为「待审批」，在单据列表点「通过」后即生成正式托运单编号与单据。</div>
+    <details class="card" style="margin-bottom:12px">
+      <summary style="cursor:pointer;font-weight:500;color:var(--blue-d)">公司抬头设置（打印抬头，点开修改）</summary>
+      <div style="margin-top:12px">
+        <div class="grid2">
+          <div class="field"><label>公司中文名（打印抬头）</label><input id="coCn" oninput="autoFillEn()" placeholder="输入中文名，英文名会自动带出"></div>
+          <div class="field"><label>公司英文名</label><input id="coEn" placeholder="自动生成，可手动改成官方英文名"></div>
+          <div class="field"><label>标志文字（左圆标内）</label><input id="coLogo"></div>
+        </div>
+        <button class="btn btn-g" onclick="saveCompany()">保存抬头</button>
+        <div class="meta" style="margin-top:8px">改完点保存，之后打印的托运单都用新抬头。</div>
+      </div>
+    </details>
+    <div class="card">
+      <div class="grid2">
+        <div class="field"><label>承运单位 <span class="req">*</span></label><input id="carrier" placeholder="如：鑫展望"></div>
+        <div class="field"><label>制单人 <span class="req">*</span></label><input id="maker" placeholder="填你自己的名字"></div>
+        <div class="field"><label>经办人</label><input id="handler"></div>
+        <div class="field"><label>经办人联系电话</label><input id="handlerPhone"></div>
+        <div class="field"><label>配送方式</label><input id="delivery" value="送货上门"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0 14px">
+      <div class="grid2">
+        <div class="field"><label>司机姓名</label><input id="driverName"></div>
+        <div class="field"><label>司机身份证号</label><input id="driverId"></div>
+        <div class="field"><label>司机电话</label><input id="driverPhone"></div>
+        <div class="field"><label>车牌号码</label><input id="plateNo"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0 14px">
+      <div class="grid2">
+        <div class="field"><label>货物名 <span class="req">*</span></label><input id="gname" placeholder="如：缠绕膜"></div>
+        <div class="field"><label>运费单价（元/吨）<span class="req">*</span></label><input id="price" type="number" step="0.01" placeholder="350"></div>
+        <div class="field"><label>数量（吨）<span class="req">*</span></label><input id="qty" type="number" step="0.01" placeholder="5.5"></div>
+        <div class="field"><label>送达时间</label><input id="deliveryTime" placeholder="如：2026-11-20"></div>
+        <div class="field"><label>备注（数量）</label><input id="gremark" placeholder="如：5"></div>
+        <div class="field"><label>备注（单位）</label><input id="gunit" value="（托）"></div>
+        <div class="field"><label>客户行数</label><input id="customerCount" type="number" value="830"></div>
+        <div class="field"><label>发货行数</label><input id="shipmentCount" type="number" value="3414"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:4px 0 14px">
+      <div class="field"><label>收货单位 <span class="req">*</span></label><input id="rcompany" placeholder="如：华昊无纺布有限公司"></div>
+      <div class="grid2">
+        <div class="field"><label>联系人 <span class="req">*</span></label><input id="rcontact" placeholder="如：洪东财"></div>
+        <div class="field"><label>联系电话 <span class="req">*</span></label><input id="rphone" placeholder="如：18815295876"></div>
+      </div>
+      <div class="field"><label>收货地址 <span class="req">*</span></label><textarea id="raddress" placeholder="省市区街道门牌号"></textarea></div>
+
+      <div class="calc">
+        <div>运费合计 <span class="amt" id="amountShow">¥0.00</span></div>
+        <div style="color:var(--muted);font-size:13px" id="cnShow">零元整</div>
+      </div>
+      <button class="btn btn-p" style="width:100%;padding:12px" onclick="submitNew()">提交审批</button>
+    </div>
+  </section>
+
+  <!-- 导出 -->
+  <section class="view" id="v-export">
+    <div class="card">
+      <div class="title-bar"><h2>按时间导出货运单</h2></div>
+      <div class="filters">
+        <input type="date" id="e-start">
+        <input type="date" id="e-end">
+      </div>
+      <div class="ops" style="margin-top:4px">
+        <button class="btn btn-p" onclick="exportCSV()">导出 CSV（Excel 可打开）</button>
+        <button class="btn btn-g" onclick="exportPrint()">打印汇总表</button>
+      </div>
+      <div id="exportStat" class="meta" style="margin-top:12px"></div>
+    </div>
+  </section>
+</div>
+
+<!-- 托运单预览弹窗 -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">托运单预览</h3>
+    <div id="printTip" style="display:none;background:#FAC775;color:#633806;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:12px">此单还在待审批，审批通过后才能打印。</div>
+    <div id="paperBox"></div>
+    <div class="modal-ops">
+      <button class="btn btn-del" onclick="closeModal()">关闭</button>
+      <button class="btn btn-p" id="printBtn" onclick="window.print()">打印 / 存为PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_COMPANY={cn:'厦门聚富塑胶制品有限公司',en:'XIAMEN JUFU PLASTIC PRODUCTS CO., LTD',logo:'GF'};
+const DEFAULT_DICT={'厦门聚富塑胶制品有限公司':'XIAMEN JUFU PLASTIC PRODUCTS CO., LTD'};
+// 共享模式：数据统一存服务端，所有人可见
+let DATA=[], COMPANY=Object.assign({},DEFAULT_COMPANY), CDICT=Object.assign({},DEFAULT_DICT);
+
+// 从服务端加载最新状态
+async function loadState(){
+  try{
+    const r=await fetch('/api/state',{cache:'no-store'});
+    const s=await r.json();
+    DATA=s.waybills||[];
+    COMPANY=Object.assign({},DEFAULT_COMPANY,s.company||{});
+    CDICT=Object.assign({},DEFAULT_DICT,s.dict||{});
+  }catch(e){
+    console.error('加载共享数据失败',e);
+  }
+}
+// 把服务端返回的新状态应用到本地
+function applyState(s){
+  if(!s)return;
+  DATA=s.waybills||DATA;
+  COMPANY=Object.assign({},DEFAULT_COMPANY,s.company||COMPANY);
+  CDICT=Object.assign({},DEFAULT_DICT,s.dict||CDICT);
+}
+
+// 汉字拼音表（公司名常用字）
+const PY_TOKENS=(
+  '厦:xia 门:men 聚:ju 富:fu 塑:su 胶:jiao 制:zhi 品:pin 有:you 限:xian 公:gong 司:si '+
+  '科:ke 技:ji 实:shi 业:ye 贸:mao 易:yi 集:ji 团:tuan 股:gu 份:fen 新:xin 材:cai 料:liao '+
+  '化:hua 工:gong 机:ji 械:xie 设:she 备:bei 电:dian 子:zi 信:xin 息:xi 网:wang 络:luo '+
+  '软:ruan 件:jian 纺:fang 织:zhi 服:fu 装:zhuang 鞋:xie 帽:mao 食:shi 生:sheng 物:wu '+
+  '医:yi 药:yao 环:huan 境:jing 能:neng 源:yuan 光:guang 伏:fu 太:tai 阳:yang 建:jian '+
+  '筑:zhu 饰:shi 程:cheng 木:mu 家:jia 具:ju 金:jin 属:shu 五:wu 矿:kuang 山:shan '+
+  '钢:gang 铁:tie 铜:tong 铝:lv 橡:xiang 纸:zhi 张:zhang 包:bao 印:yin 刷:shua '+
+  '物:wu 流:liu 运:yun 输:shu 仓:cang 储:chu 国:guo 际:ji 进:jin 出:chu 口:kou '+
+  '商:shang 务:wu 咨:zi 询:xun 管:guan 理:li 投:tou 资:zi 发:fa 展:zhan 文:wen '+
+  '传:chuan 媒:mei 告:gao 教:jiao 育:yu 旅:lv 游:you 餐:can 饮:yin 酒:jiu 店:dian '+
+  '宾:bin 馆:guan 超:chao 市:shi 连:lian 锁:suo 行:hang 银:yin 保:bao 险:xian '+
+  '证:zheng 券:quan 地:di 产:chan 房:fang 屋:wu 土:tu 水:shui 泥:ni 砂:sha 石:shi '+
+  '玻:bo 璃:li 陶:tao 瓷:ci 卫:wei 浴:yu 灯:deng 器:qi 动:dong 化:hua 仪:yi 表:biao '+
+  '阀:fa 门:men 轴:zhou 承:cheng 齿:chi 轮:lun 标:biao 准:zhun 检:jian 测:ce '+
+  '认:ren 中:zhong 心:xin 总:zong 部:bu 分:fen 厂:chang 场:chang 站:zhan 库:ku '+
+  '园:yuan 区:qu 基:ji 地:di 北:bei 京:jing 上:shang 海:hai 广:guang 州:zhou '+
+  '深:shen 圳:zhen 杭:hang 南:nan 苏:su 宁:ning 波:bo 温:wen 福:fu 泉:quan '+
+  '东:dong 莞:guan 佛:fo 珠:zhu 惠:hui 汕:shan 潮:chao 揭:jie 阳:yang 湛:zhan '+
+  '江:jiang 茂:mao 名:ming 肇:zhao 庆:qing 西:xi 浙:zhe 湖:hu 河:he 川:chuan '+
+  '贵:gui 云:yun 陕:shan 甘:gan 肃:su 青:qing 夏:xia 藏:zang '+
+  '内:nei 蒙:meng 古:gu 辽:liao 吉:ji 林:lin 黑:hei 龙:long 疆:jiang 合:he 肥:fei 武:wu '+
+  '长:chang 沙:sha 郑:zheng 济:ji 岛:dao 大:da 连:lian 沈:shen 哈:ha 尔:er '+
+  '滨:bin 成:cheng 都:du 重:chong 安:an 兰:lan 乌:wu 鲁:lu 木:mu 齐:qi 昆:kun '+
+  '明:ming 华:hua 昊:hao 无:wu 纺:fang 布:bu 金:jin 鑫:xin 源:yuan 盛:sheng '+
+  '达:da 兴:xing 隆:long 泰:tai 和:he 顺:shun 通:tong 恒:heng 信:xin 立:li '+
+  '宏:hong 伟:wei 远:yuan 高:gao 德:de 润:run 嘉:jia 铭:ming 博:bo 瑞:rui '+
+  '锐:rui 锋:feng 辉:hui 耀:yao 腾:teng 飞:fei 创:chuang 维:wei 联:lian 合:he '+
+  '众:zhong 昌:chang 荣:rong 茂:mao 康:kang 健:jian 安:an 泰:tai 宁:ning 吉:ji '+
+  '祥:xiang 美:mei 好:hao 优:you 卓:zhuo 越:yue 领:ling 先:xian 力:li 强:qiang '+
+  '力:li 恒:heng 久:jiu 长:chang 青:qing 蓝:lan 星:xing 月:yue 日:ri 天:tian '+
+  '地:di 乾:qian 坤:kun 宇:yu 宙:zhou 宏:hong 图:tu 志:zhi 远:yuan 诚:cheng '+
+  '谊:yiyi 信:xin 义:yi 礼:li 智:zhi 仁:ren 和:he 平:ping 顺:shun 百:bai '+
+  '千:qian 万:wan 亿:yi 元:yuan 通:tong 达:da 利:li 丰:feng 盛:sheng 隆:long'
+).trim().split(/\s+/);
+const PYMAP={};PY_TOKENS.forEach(t=>{const i=t.indexOf(':');if(i>0)PYMAP[t.slice(0,i)]=t.slice(i+1);});
+
+// 公司常用词 → 英文（长词在前）
+const WORDS=[
+  ['股份有限公司','CO., LTD.'],['有限责任公司','CO., LTD.'],['有限公司','CO., LTD.'],
+  ['厦门','XIAMEN'],['上海','SHANGHAI'],['广州','GUANGZHOU'],['北京','BEIJING'],
+  ['深圳','SHENZHEN'],['杭州','HANGZHOU'],['南京','NANJING'],['苏州','SUZHOU'],
+  ['宁波','NINGBO'],['温州','WENZHOU'],['福州','FUZHOU'],['泉州','QUANZHOU'],
+  ['东莞','DONGGUAN'],['佛山','FOSHAN'],['珠海','ZHUHAI'],['青岛','QINGDAO'],
+  ['大连','DALIAN'],['成都','CHENGDU'],['重庆','CHONGQING'],['武汉','WUHAN'],['新疆','XINJIANG'],
+  ['塑胶制品','PLASTIC PRODUCTS'],['塑料制品','PLASTIC PRODUCTS'],['新材料','NEW MATERIAL'],
+  ['电子科技','ELECTRONIC TECHNOLOGY'],['科技','TECHNOLOGY'],['电子','ELECTRONICS'],
+  ['实业','INDUSTRIAL'],['贸易','TRADING'],['集团','GROUP'],['制品','PRODUCTS'],
+  ['塑胶','PLASTIC'],['塑料','PLASTIC'],['化工','CHEMICAL'],['机械','MACHINERY'],
+  ['设备','EQUIPMENT'],['网络','NETWORK'],['软件','SOFTWARE'],['信息','INFORMATION'],
+  ['投资','INVESTMENT'],['发展','DEVELOPMENT'],['管理','MANAGEMENT'],['服务','SERVICE'],
+  ['传媒','MEDIA'],['文化','CULTURE'],['教育','EDUCATION'],['建筑','CONSTRUCTION'],
+  ['装饰','DECORATION'],['工程','ENGINEERING'],['物流','LOGISTICS'],['运输','TRANSPORT'],
+  ['包装','PACKAGING'],['印刷','PRINTING'],['纺织','TEXTILE'],['服装','GARMENT'],
+  ['家具','FURNITURE'],['金属','METAL'],['五金','HARDWARE'],['生物','BIO'],
+  ['医药','PHARMA'],['能源','ENERGY'],['环保','ENVIRONMENT'],['国际','INTERNATIONAL'],
+  ['商务','BUSINESS'],['咨询','CONSULTING'],['有限','LTD'],['公司','CO']
+];
+
+// 中文名 → 英文（词表优先，其余按拼音）
+function cnToEn(cn){
+  let out='',i=0;
+  while(i<cn.length){
+    let matched=false;
+    for(const [w,en] of WORDS){
+      if(cn.startsWith(w,i)){out+=' '+en+' ';i+=w.length;matched=true;break;}
+    }
+    if(matched)continue;
+    const ch=cn[i];
+    if(/[\u4e00-\u9fa5]/.test(ch)){
+      out+=' '+(PYMAP[ch]?PYMAP[ch].toUpperCase():ch)+' ';
+    }else{
+      out+=ch;
+    }
+    i++;
+  }
+  return out.replace(/\s+/g,' ').trim().toUpperCase();
+}
+
+// 输入中文名时：优先用保存过的官方英文名，否则自动生成
+function autoFillEn(){
+  const cn=document.getElementById('coCn').value.trim();
+  if(!cn){document.getElementById('coEn').value='';return;}
+  document.getElementById('coEn').value=CDICT[cn]||cnToEn(cn);
+}
+async function saveCompany(){
+  const company={
+    cn:document.getElementById('coCn').value.trim()||DEFAULT_COMPANY.cn,
+    en:document.getElementById('coEn').value.trim()||DEFAULT_COMPANY.en,
+    logo:document.getElementById('coLogo').value.trim()||DEFAULT_COMPANY.logo
+  };
+  try{
+    const r=await fetch('/api/company',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({company,cn:company.cn,en:company.en})});
+    applyState(await r.json());
+    alert('抬头已保存，所有人打印时生效');
+  }catch(e){alert('保存失败，请检查服务是否运行');}
+}
+function loadCompanyForm(){
+  document.getElementById('coCn').value=COMPANY.cn;
+  document.getElementById('coEn').value=COMPANY.en;
+  document.getElementById('coLogo').value=COMPANY.logo;
+}
+function uid(){return 'wb_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtDate(d){const x=new Date(d);return x.toLocaleString('zh-CN',{hour12:false});}
+function fmtNo(n){return '¥'+Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// 数字转中文大写
+const CN='零壹贰叁肆伍陆柒捌玖', U=['','拾','佰','仟'], BIG=['','万','亿'];
+function sec(n){let s='',z=false;for(let i=3;i>=0;i--){const d=Math.floor(n/Math.pow(10,i))%10;if(d===0){if(s)z=true;}else{if(z){s+='零';z=false;}s+=CN[d]+U[i];}}return s;}
+function intCN(n){if(n===0)return '零';let g=[];while(n>0){g.push(n%10000);n=Math.floor(n/10000);}let p=[];for(let i=g.length-1;i>=0;i--){const v=g[i];if(v===0){if(p.length)p.push('零');}else{p.push(sec(v)+BIG[i]);}}return p.join('').replace(/零+/g,'零').replace(/零$/,'')||'零';}
+function moneyCN(n){n=Number(n);if(!isFinite(n))return '零元整';const i=Math.floor(n),c=Math.round((n-i)*100),j=Math.floor(c/10),f=c%10;let s=intCN(i)+'元';if(!j&&!f)return s+'整';if(j)s+=CN[j]+'角';else if(f)s+='零';if(f)s+=CN[f]+'分';return s;}
+
+// 标签切换
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');document.getElementById('v-'+t.dataset.v).classList.add('on');
+  if(t.dataset.v==='list'){loadState().then(renderList);}
+  if(t.dataset.v==='export')updateExportStat();
+});
+
+// 实时算金额
+function recalc(){
+  const p=parseFloat(document.getElementById('price').value)||0;
+  const q=parseFloat(document.getElementById('qty').value)||0;
+  const a=Math.round(p*q*100)/100;
+  document.getElementById('amountShow').textContent=fmtNo(a);
+  document.getElementById('cnShow').textContent=moneyCN(a);
+}
+['price','qty'].forEach(id=>document.getElementById(id).addEventListener('input',recalc));
+
+// 提交
+function submitNew(){
+  const g=id=>document.getElementById(id).value.trim();
+  const o={id:uid(),waybill_no:'',created_at:Date.now(),status:'pending',
+    carrier:g('carrier'),maker:g('maker'),handler:g('handler'),handlerPhone:g('handlerPhone'),
+    driverName:g('driverName'),driverId:g('driverId'),driverPhone:g('driverPhone'),plateNo:g('plateNo'),
+    delivery:g('delivery')||'送货上门',
+    gname:g('gname'),price:parseFloat(g('price'))||0,qty:parseFloat(g('qty'))||0,
+    deliveryTime:g('deliveryTime'),gremark:g('gremark'),gunit:g('gunit')||'（托）',
+    customerCount:parseInt(g('customerCount'))||0,shipmentCount:parseInt(g('shipmentCount'))||0,
+    rcompany:g('rcompany'),rcontact:g('rcontact'),rphone:g('rphone'),raddress:g('raddress')};
+  if(!o.carrier||!o.maker||!o.gname||!o.price||!o.qty||!o.rcompany||!o.rcontact||!o.rphone||!o.raddress){
+    alert('请填写所有带 * 的必填项');return;
+  }
+  o.amount=Math.round(o.price*o.qty*100)/100;
+  fetch('/api/waybills',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)})
+    .then(r=>r.json()).then(s=>{
+      applyState(s);
+      ['carrier','maker','handler','handlerPhone','driverName','driverId','driverPhone','plateNo','gname','price','qty','deliveryTime','gremark','rcompany','rcontact','rphone','raddress'].forEach(id=>document.getElementById(id).value='');
+      recalc();
+      document.querySelector('.tab[data-v=list]').click();
+      alert('已提交，状态为「待审批」，其他人也能看到。请在列表点「通过」生成托运单。');
+    }).catch(()=>alert('提交失败，请检查服务是否运行'));
+}
+
+// 生成单号
+function ensureNo(o){
+  if(o.waybill_no)return;
+  const d=new Date(o.created_at);
+  const ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  const same=DATA.filter(x=>x.waybill_no&&x.waybill_no.startsWith('YF'+ymd)).length+1;
+  o.waybill_no='YF'+ymd+String(same).padStart(4,'0');
+}
+
+// 列表渲染
+function renderList(){
+  const st=document.getElementById('f-status').value;
+  const s=document.getElementById('f-start').value, e=document.getElementById('f-end').value;
+  let arr=DATA.filter(o=>{
+    if(st!=='all'&&o.status!==st)return false;
+    const d=new Date(o.created_at);
+    if(s&&d<new Date(s+'T00:00:00'))return false;
+    if(e&&d>new Date(e+'T23:59:59'))return false;
+    return true;
+  });
+  const box=document.getElementById('listBox');
+  if(!arr.length){box.innerHTML='<div class="empty">暂无符合条件的托运单</div>';return;}
+  const BM={pending:['待审批','b-pending'],done:['已通过','b-done'],reject:['已驳回','b-reject']};
+  box.innerHTML=arr.map(o=>{
+    const b=BM[o.status]||BM.pending;
+    let ops=`<button class="btn btn-g" onclick="showPaper('${o.id}')">查看托运单</button>`;
+    if(o.status==='pending')ops+=`<button class="btn btn-ok" onclick="approve('${o.id}',1)">通过</button><button class="btn btn-no" onclick="approve('${o.id}',0)">驳回</button>`;
+    ops+=`<button class="btn btn-del" onclick="del('${o.id}')">删除</button>`;
+    return `<div class="card">
+      <div class="row">
+        <div><div class="no">${o.waybill_no||'（待生成编号）'}</div>
+          <div class="meta">${fmtDate(o.created_at)} · ${esc(o.carrier)} · 制单 ${esc(o.maker||'—')}${o.approver?' · 审批 '+esc(o.approver):''}</div></div>
+        <span class="badge ${b[1]}">${b[0]}</span>
+      </div>
+      <div class="meta" style="margin-top:8px">
+        货物 <b>${esc(o.gname)}</b> ${o.qty}吨 × ${o.price}元/吨　
+        收货 <b>${esc(o.rcompany)}</b>　
+        金额 <b>${fmtNo(o.amount)}</b>
+      </div>
+      <div class="ops">${ops}</div>
+    </div>`;
+  }).join('');
+}
+
+async function approve(id,ok){
+  let approver='';
+  if(ok){
+    approver=(prompt('审批通过需要署名，请输入你的姓名：')||'').trim();
+    if(!approver){alert('未署名，不能批准同意');return;}
+  }else{
+    if(!confirm('确认驳回？'))return;
+  }
+  try{
+    const r=await fetch('/api/waybills/'+encodeURIComponent(id)+'/approve',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({ok:ok?1:0,approver})});
+    const s=await r.json();applyState(s);renderList();
+    if(ok){const n=(DATA.find(x=>x.id===id)||{}).waybill_no;alert('已通过，托运单号 '+n+'，审批人：'+approver);}
+  }catch(e){alert('操作失败，请检查服务是否运行');}
+}
+async function del(id){
+  if(!confirm('确认删除该记录？'))return;
+  try{
+    const r=await fetch('/api/waybills/'+encodeURIComponent(id),{method:'DELETE'});
+    applyState(await r.json());renderList();
+  }catch(e){alert('删除失败，请检查服务是否运行');}
+}
+
+// 托运单打印视图
+function showPaper(id){
+  const o=DATA.find(x=>x.id===id);if(!o)return;
+  const no=o.waybill_no?esc(o.waybill_no):'（待审批，通过后才生成）';
+  const side='第<br>一<br>联<br>&nbsp;<br>白<br>联<br>留<br>底<br>联<br>&nbsp;<br>&nbsp;<br>第<br>二<br>联<br>&nbsp;<br>红<br>联<br>客<br>户<br>联';
+  const terms='承运单位到我司提货时，必须清点验收总件数，并确认包装是否完好，如有异常，需当场声明，并与公司仓库人员办好交接托运手续。承运单位必须按公司要求运抵目的地，并与收货单位办好签收手续。在全程运输中，造成货物损坏、受潮、短缺等均由承运单位照价赔偿。';
+  document.getElementById('paperBox').innerHTML=`<div class="paper" id="paper">
+  <div class="sheet">
+    <div class="cols">
+      <div class="ptop">
+        <div class="plogo">${esc(COMPANY.logo)}</div>
+        <div class="pco"><div class="cn">${esc(COMPANY.cn)}</div><div class="en">${esc(COMPANY.en)}</div></div>
+        <div class="pstat">
+          <div>客户行数：<u>${o.customerCount||''}</u></div>
+          <div>发货行数：<u>${o.shipmentCount||''}</u></div>
+          <div>配送方式：<u>${esc(o.delivery||'送货上门')}</u></div>
+        </div>
+      </div>
+      <div class="ptitle">货物托运单<span class="pno">编号：${no}</span></div>
+      <table class="pw">
+        <colgroup><col style="width:9%"><col style="width:24%"><col style="width:9%"><col style="width:16%"><col style="width:10%"><col style="width:32%"></colgroup>
+        <tr><td class="lb">承运单位</td><td colspan="3" class="pbig">${esc(o.carrier)}</td><td class="lb">制单人</td><td>${esc(o.maker||'')}</td></tr>
+        <tr><td class="lb">经办人</td><td colspan="3">${esc(o.handler||'')}</td><td class="lb">经办人电话</td><td>${esc(o.handlerPhone||'')}</td></tr>
+        <tr><td class="lb">司机姓名</td><td colspan="3">${esc(o.driverName||'')}</td><td class="lb">司机电话</td><td>${esc(o.driverPhone||'')}</td></tr>
+        <tr><td class="lb">身份证号</td><td colspan="5">${esc(o.driverId||'')}</td></tr>
+        <tr><td class="lb">车牌号码</td><td colspan="5">${esc(o.plateNo||'')}</td></tr>
+        <tr>
+          <td class="lb" style="text-align:center">货物名</td>
+          <td class="lb" style="text-align:center">运费</td>
+          <td class="lb" style="text-align:center">数量（吨）</td>
+          <td class="lb" style="text-align:center" colspan="2">送达时间</td>
+          <td class="lb" style="text-align:center">备注</td>
+        </tr>
+        <tr>
+          <td style="text-align:center">${esc(o.gname)}</td>
+          <td style="text-align:center">${o.price} 元/吨</td>
+          <td style="text-align:center">${o.qty} 吨</td>
+          <td style="text-align:center" colspan="2">${esc(o.deliveryTime||'')}</td>
+          <td style="text-align:center">${esc(o.gremark||'')}</td>
+        </tr>
+        <tr><td colspan="5"></td><td style="text-align:center">${esc(o.gunit||'（托）')}</td></tr>
+        <tr><td colspan="6">${esc(o.delivery||'送货上门')}</td></tr>
+        <tr><td class="lb">合计</td><td colspan="5" class="ptotal">${fmtNo(o.amount)}　（运费）大写：${moneyCN(o.amount)}</td></tr>
+        <tr><td class="lb" style="vertical-align:top">特别事项</td><td colspan="5" class="pterms">${terms}</td></tr>
+        <tr><td class="lb">收货单位</td><td colspan="2" class="pbig">${esc(o.rcompany)}</td><td class="lb">联系地址</td><td colspan="2">${esc(o.raddress)}</td></tr>
+        <tr><td class="lb">联系人</td><td colspan="2">${esc(o.rcontact)}</td><td class="lb">联系电话</td><td colspan="2">${esc(o.rphone)}</td></tr>
+        <tr>
+          <td class="lb" style="vertical-align:top">单位验收意见</td>
+          <td colspan="5" class="paccept">
+            1、货物实收总数量：共计　　　件；大写　　　　　件　　　　　　3、验收人地址：________________<br>
+            2、货物完好情况：________________　　　　　　　　　　　　　　4、验收人签名：________________<br>
+            （以上两项收货人未填，则视为正常）　　　　　　　　　　　　　5、验收日期：　　年　　月　　日
+          </td>
+        </tr>
+      </table>
+      <div class="psign">
+        <span>制单人：${esc(o.maker||'____________')}</span>
+        <span>审核人：${o.approver?esc(o.approver):'____________'}</span>
+        <span>主管：____________</span>
+        <span>　　年　　月　　日</span>
+      </div>
+    </div>
+    <div class="side">${side}</div>
+  </div>
+  </div>`;
+  // 审批通过后才能打印
+  const canPrint=o.status==='done';
+  const statusText={pending:'待审批',reject:'已驳回',done:'已通过'}[o.status]||o.status;
+  document.getElementById('printBtn').style.display=canPrint?'':'none';
+  document.getElementById('printTip').style.display=canPrint?'none':'';
+  document.getElementById('printTip').textContent=(o.status==='reject'?'此单已被驳回，':'此单还在待审批，')+'审批通过后才能打印。';
+  document.getElementById('modalTitle').textContent=canPrint?'托运单（已通过）':'托运单（'+statusText+' · 暂不可打印）';
+  document.getElementById('modal').classList.add('on');
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('on');}
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
+
+// 导出
+function filteredForExport(){
+  const s=document.getElementById('e-start').value, e=document.getElementById('e-end').value;
+  return DATA.filter(o=>{
+    if(o.status!=='done')return false;
+    const d=new Date(o.created_at);
+    if(s&&d<new Date(s+'T00:00:00'))return false;
+    if(e&&d>new Date(e+'T23:59:59'))return false;
+    return true;
+  });
+}
+function updateExportStat(){
+  const a=filteredForExport();
+  const sum=a.reduce((s,o)=>s+o.amount,0);
+  document.getElementById('exportStat').innerHTML=`已通过单据 <b>${a.length}</b> 张，金额合计 <b>${fmtNo(sum)}</b>（${moneyCN(sum)}）`;
+}
+function exportCSV(){
+  const a=filteredForExport();
+  if(!a.length){alert('该时间范围内没有已通过的托运单');return;}
+  const head=['单号','生成时间','承运单位','货物名','运费单价(元/吨)','数量(吨)','金额(元)','大写金额','备注','收货单位','联系人','联系电话','收货地址'];
+  const rows=a.map(o=>[o.waybill_no,new Date(o.created_at).toLocaleString('zh-CN',{hour12:false}),o.carrier,o.gname,o.price,o.qty,o.amount.toFixed(2),moneyCN(o.amount),o.gremark,o.rcompany,o.rcontact,o.rphone,o.raddress]);
+  const csv='\ufeff'+[head,...rows].map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a2=document.createElement('a');
+  a2.href=url;a2.download='货运单汇总_'+Date.now()+'.csv';a2.click();URL.revokeObjectURL(url);
+}
+function exportPrint(){
+  const a=filteredForExport();
+  if(!a.length){alert('该时间范围内没有已通过的托运单');return;}
+  let h='<div class="paper"><h2>货运单汇总表</h2><table class="pt"><tr><th>单号</th><th>日期</th><th>承运</th><th>货物</th><th>数量</th><th>金额</th><th>收货单位</th></tr>';
+  a.forEach(o=>h+=`<tr><td>${esc(o.waybill_no)}</td><td>${new Date(o.created_at).toLocaleDateString('zh-CN')}</td><td>${esc(o.carrier)}</td><td>${esc(o.gname)}</td><td>${o.qty}</td><td>${fmtNo(o.amount)}</td><td>${esc(o.rcompany)}</td></tr>`);
+  h+='</table></div>';
+  document.getElementById('paperBox').innerHTML=h;
+  document.getElementById('modal').classList.add('on');
+}
+
+loadState().then(()=>{loadCompanyForm();recalc();renderList();updateExportStat();});
+</script>
+</body>
+</html>
